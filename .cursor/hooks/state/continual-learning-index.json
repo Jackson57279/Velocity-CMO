@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "transcripts": {
+    "/home/dih/.cursor/projects/home-dih-ai-cmo-app/agent-transcripts/bdcdfdc3-d1ca-4bc7-9f3a-3f532406b682/bdcdfdc3-d1ca-4bc7-9f3a-3f532406b682.jsonl": {
+      "mtimeMs": 1773737973000,
+      "lastProcessedAt": "2026-03-17T00:00:00.000Z"
+    },
+    "/home/dih/.cursor/projects/home-dih-ai-cmo-app/agent-transcripts/43c0fbac-397f-4184-9436-34c8c036e49e/43c0fbac-397f-4184-9436-34c8c036e49e.jsonl": {
+      "mtimeMs": 1773737791000,
+      "lastProcessedAt": "2026-03-17T00:00:00.000Z"
+    },
+    "/home/dih/.cursor/projects/home-dih-ai-cmo-app/agent-transcripts/5677cb32-4612-4b13-8842-bdb2e5051626/5677cb32-4612-4b13-8842-bdb2e5051626.jsonl": {
+      "mtimeMs": 1773737735000,
+      "lastProcessedAt": "2026-03-17T00:00:00.000Z"
+    },
+    "/home/dih/.cursor/projects/home-dih-ai-cmo-app/agent-transcripts/b7d1ddc3-8127-4803-8519-9f680a11d42d/b7d1ddc3-8127-4803-8519-9f680a11d42d.jsonl": {
+      "mtimeMs": 1773737129000,
+      "lastProcessedAt": "2026-03-17T00:00:00.000Z"
+    },
+    "/home/dih/.cursor/projects/home-dih-ai-cmo-app/agent-transcripts/5a3047c6-eb53-4ce5-b4f3-9c373dc177ee/5a3047c6-eb53-4ce5-b4f3-9c373dc177ee.jsonl": {
+      "mtimeMs": 1773736845000,
+      "lastProcessedAt": "2026-03-17T00:00:00.000Z"
+    },
+    "/home/dih/.cursor/projects/home-dih-ai-cmo-app/agent-transcripts/f23a961d-6b18-4513-8b12-baef208ca720/f23a961d-6b18-4513-8b12-baef208ca720.jsonl": {
+      "mtimeMs": 1773732108000,
+      "lastProcessedAt": "2026-03-17T00:00:00.000Z"
+    }
+  }
+}
