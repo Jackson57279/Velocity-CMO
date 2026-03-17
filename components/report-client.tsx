@@ -18,6 +18,7 @@ import type {
 
 interface ReportClientProps {
   reportId: string;
+  initialReport?: MarketingReport;
 }
 
 type FeedTone = Recommendation["priority"] | "neutral";
@@ -367,12 +368,12 @@ function LoadingShell(): JSX.Element {
   );
 }
 
-export function ReportClient({ reportId }: ReportClientProps): JSX.Element {
+export function ReportClient({ reportId, initialReport }: ReportClientProps): JSX.Element {
   const [state, setState] = useState<{
     report: MarketingReport | null;
     error: string | null;
   }>({
-    report: null,
+    report: initialReport ?? null,
     error: null,
   });
   const { report, error } = state;

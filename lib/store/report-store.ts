@@ -1,7 +1,9 @@
-import { randomUUID } from "node:crypto";
-import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { randomUUID } from "node:crypto"
 
+import { and, desc, eq, lt, or, sql } from "drizzle-orm"
+
+import { db } from "@/lib/db"
+import { analysisJobs, reports } from "@/lib/db/schema"
 import {
   type AgentDescriptor,
   type AgentLogEntry,
@@ -10,81 +12,75 @@ import {
   type MarketingReport,
   type ScoreCard,
   reportAgentBlueprint,
-} from "@/lib/types/report";
+} from "@/lib/types/report"
 
-declare global {
-  var __aiCmoReports: Map<string, MarketingReport> | undefined;
-  var __aiCmoReportStorageReady: boolean | undefined;
-}
-
-const STORAGE_DIR = join(process.cwd(), ".data", "reports");
-const reportStore = globalThis.__aiCmoReports ?? new Map<string, MarketingReport>();
-
-if (!globalThis.__aiCmoReports) {
-  globalThis.__aiCmoReports = reportStore;
-}
-
-function ensureStorageDir(): void {
-  if (globalThis.__aiCmoReportStorageReady) {
-    return;
-  }
-
-  mkdirSync(STORAGE_DIR, { recursive: true });
-  globalThis.__aiCmoReportStorageReady = true;
-}
-
-function reportFilePath(reportId: string): string {
-  return join(STORAGE_DIR, `${reportId}.json`);
-}
-
-function rememberReport(report: MarketingReport): MarketingReport {
-  reportStore.set(report.id, report);
-  return report;
-}
-
-function persistReport(report: MarketingReport): void {
-  ensureStorageDir();
-
-  const destinationPath = reportFilePath(report.id);
-  const temporaryPath = `${destinationPath}.tmp`;
-  writeFileSync(temporaryPath, JSON.stringify(report, null, 2), "utf8");
-  renameSync(temporaryPath, destinationPath);
-}
-
-function parseStoredReport(serializedReport: string): MarketingReport | undefined {
-  try {
-    const parsed = JSON.parse(serializedReport) as MarketingReport;
-
-    if (!parsed.id || !parsed.updatedAt) {
-      return undefined;
-    }
-
-    return parsed;
-  } catch {
-    return undefined;
-  }
-}
-
-function readStoredReport(reportId: string): MarketingReport | undefined {
-  ensureStorageDir();
-
-  const storedPath = reportFilePath(reportId);
-
-  if (!existsSync(storedPath)) {
-    return undefined;
-  }
-
-  const parsed = parseStoredReport(readFileSync(storedPath, "utf8"));
-
-  return parsed ? rememberReport(parsed) : undefined;
-}
+const ANALYSIS_LOCK_WINDOW_MS = 20 * 60 * 1000
 
 function cloneAgents(): AgentDescriptor[] {
-  return reportAgentBlueprint.map((agent) => ({ ...agent }));
+  return reportAgentBlueprint.map((agent) => ({ ...agent }))
 }
 
-export function createReport(submittedUrl: string, normalizedUrl: string, hostname: string): MarketingReport {
-  const timestamp = new Date().toISOString();
+function hydrateReport(report: MarketingReport): MarketingReport {
+  return report
+}
+
+async function getStoredReport(reportId: string): Promise<MarketingReport | undefined> {
+  const [record] = await db.select({ payload: reports.payload }).from(reports).where(eq(reports.id, reportId)).limit(1)
+
+  return record ? hydrateReport(record.payload) : undefined
+}
+
+function reportRowValues(report: MarketingReport, organizationId: string, createdByUserId: string) {
+  return {
+    id: report.id,
+    organizationId,
+    createdByUserId,
+    submittedUrl: report.submittedUrl,
+    normalizedUrl: report.normalizedUrl,
+    hostname: report.hostname,
+    status: report.status,
+    summary: report.summary,
+    payload: report,
+    createdAt: new Date(report.createdAt),
+    updatedAt: new Date(report.updatedAt),
+  }
+}
+
+async function persistReport(
+  report: MarketingReport,
+  organizationId: string,
+  createdByUserId: string,
+): Promise<void> {
+  await db
+    .update(reports)
+    .set({
+      organizationId,
+      createdByUserId,
+      submittedUrl: report.submittedUrl,
+      normalizedUrl: report.normalizedUrl,
+      hostname: report.hostname,
+      status: report.status,
+      summary: report.summary,
+      payload: report,
+      updatedAt: new Date(report.updatedAt),
+    })
+    .where(eq(reports.id, report.id))
+}
+
+export async function createReport({
+  submittedUrl,
+  normalizedUrl,
+  hostname,
+  organizationId,
+  createdByUserId,
+}: {
+  submittedUrl: string
+  normalizedUrl: string
+  hostname: string
+  organizationId: string
+  createdByUserId: string
+}): Promise<MarketingReport> {
+  const timestamp = new Date().toISOString()
   const report: MarketingReport = {
     id: randomUUID(),
     submittedUrl,
@@ -97,137 +93,209 @@ export function createReport(submittedUrl: string, normalizedUrl: string, hostna
     agents: cloneAgents(),
     logs: [],
     scores: [],
-  };
-
-  rememberReport(report);
-  persistReport(report);
-
-  return rememberReport(report);
-}
-
-export function getReport(reportId: string): MarketingReport | undefined {
-  return reportStore.get(reportId) ?? readStoredReport(reportId);
-}
-
-export function listReports(limit = 6): MarketingReport[] {
-  ensureStorageDir();
-
-  const mergedReports = new Map<string, MarketingReport>();
-
-  for (const report of reportStore.values()) {
-    mergedReports.set(report.id, report);
   }
 
-  for (const fileName of readdirSync(STORAGE_DIR)) {
-    if (!fileName.endsWith(".json")) {
-      continue;
-    }
+  await db.insert(reports).values(reportRowValues(report, organizationId, createdByUserId))
+  await db.insert(analysisJobs).values({
+    reportId: report.id,
+    organizationId,
+    status: "queued",
+  })
 
-    const parsed = parseStoredReport(readFileSync(join(STORAGE_DIR, fileName), "utf8"));
-
-    if (parsed) {
-      mergedReports.set(parsed.id, parsed);
-      rememberReport(parsed);
-    }
-  }
-
-  return Array.from(mergedReports.values())
-    .sort((left, right) => new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime())
-    .slice(0, limit);
+  return report
 }
 
-export function updateReport(
+export async function getReport(reportId: string, organizationId: string): Promise<MarketingReport | undefined> {
+  const [record] = await db
+    .select({ payload: reports.payload })
+    .from(reports)
+    .where(and(eq(reports.id, reportId), eq(reports.organizationId, organizationId)))
+    .limit(1)
+
+  return record ? hydrateReport(record.payload) : undefined
+}
+
+export async function listReports(organizationId: string, limit = 6): Promise<MarketingReport[]> {
+  const records = await db
+    .select({ payload: reports.payload })
+    .from(reports)
+    .where(eq(reports.organizationId, organizationId))
+    .orderBy(desc(reports.updatedAt))
+    .limit(limit)
+
+  return records.map((record) => hydrateReport(record.payload))
+}
+
+export async function updateReport(
   reportId: string,
   updater: (draft: MarketingReport) => void,
-): MarketingReport | undefined {
-  const current = getReport(reportId);
+): Promise<MarketingReport | undefined> {
+  const [record] = await db
+    .select({
+      payload: reports.payload,
+      organizationId: reports.organizationId,
+      createdByUserId: reports.createdByUserId,
+    })
+    .from(reports)
+    .where(eq(reports.id, reportId))
+    .limit(1)
 
-  if (!current) {
-    return undefined;
+  if (!record) {
+    return undefined
   }
 
-  const draft = structuredClone(current);
-  updater(draft);
-  draft.updatedAt = new Date().toISOString();
-  rememberReport(draft);
-  persistReport(draft);
+  const draft = structuredClone(record.payload)
+  updater(draft)
+  draft.updatedAt = new Date().toISOString()
 
-  return draft;
+  await persistReport(draft, record.organizationId, record.createdByUserId)
+
+  return draft
 }
 
-export function setJobStatus(
+export async function setJobStatus(
   reportId: string,
   status: MarketingReport["status"],
   summary?: string,
-): MarketingReport | undefined {
+): Promise<MarketingReport | undefined> {
   return updateReport(reportId, (draft) => {
-    draft.status = status;
+    draft.status = status
 
     if (summary) {
-      draft.summary = summary;
+      draft.summary = summary
     }
-  });
+  })
 }
 
-export function setAgentStatus(
+export async function setAgentStatus(
   reportId: string,
   agentId: string,
   status: AgentStatus,
   summary?: string,
-): MarketingReport | undefined {
+): Promise<MarketingReport | undefined> {
   return updateReport(reportId, (draft) => {
-    const agent = draft.agents.find((candidate) => candidate.id === agentId);
+    const agent = draft.agents.find((candidate) => candidate.id === agentId)
 
     if (!agent) {
-      return;
+      return
     }
 
-    agent.status = status;
+    agent.status = status
 
     if (status === "running" && !agent.startedAt) {
-      agent.startedAt = new Date().toISOString();
+      agent.startedAt = new Date().toISOString()
     }
 
     if (status === "completed" || status === "failed") {
-      agent.completedAt = new Date().toISOString();
+      agent.completedAt = new Date().toISOString()
     }
 
     if (summary) {
-      agent.summary = summary;
+      agent.summary = summary
     }
-  });
+  })
 }
 
-export function appendLog(
+export async function appendLog(
   reportId: string,
   agentId: string,
   level: LogLevel,
   message: string,
-): AgentLogEntry | undefined {
+): Promise<AgentLogEntry | undefined> {
   const entry: AgentLogEntry = {
     id: randomUUID(),
     agentId,
     level,
     message,
     timestamp: new Date().toISOString(),
-  };
+  }
 
-  const updated = updateReport(reportId, (draft) => {
-    draft.logs.push(entry);
-  });
+  const updated = await updateReport(reportId, (draft) => {
+    draft.logs.push(entry)
+  })
 
-  return updated ? entry : undefined;
+  return updated ? entry : undefined
 }
 
-export function upsertScore(reportId: string, score: ScoreCard): MarketingReport | undefined {
+export async function upsertScore(reportId: string, score: ScoreCard): Promise<MarketingReport | undefined> {
   return updateReport(reportId, (draft) => {
-    const existingIndex = draft.scores.findIndex((candidate) => candidate.id === score.id);
+    const existingIndex = draft.scores.findIndex((candidate) => candidate.id === score.id)
 
     if (existingIndex === -1) {
-      draft.scores.push(score);
-      return;
+      draft.scores.push(score)
+      return
     }
 
-    draft.scores[existingIndex] = score;
-  });
+    draft.scores[existingIndex] = score
+  })
+}
+
+export async function claimAnalysisJob(reportId: string, lockedBy: string): Promise<boolean> {
+  const staleThreshold = new Date(Date.now() - ANALYSIS_LOCK_WINDOW_MS)
+  const [claimedJob] = await db
+    .update(analysisJobs)
+    .set({
+      status: "running",
+      lockedAt: new Date(),
+      lockedBy,
+      startedAt: sql`coalesce(${analysisJobs.startedAt}, now())`,
+      completedAt: null,
+      attemptCount: sql`${analysisJobs.attemptCount} + 1`,
+      lastError: null,
+      updatedAt: new Date(),
+    })
+    .where(
+      and(
+        eq(analysisJobs.reportId, reportId),
+        or(
+          eq(analysisJobs.status, "queued"),
+          and(eq(analysisJobs.status, "running"), lt(analysisJobs.lockedAt, staleThreshold)),
+        ),
+      ),
+    )
+    .returning({ reportId: analysisJobs.reportId })
+
+  return Boolean(claimedJob)
+}
+
+export async function touchAnalysisJob(reportId: string, lockedBy: string): Promise<void> {
+  await db
+    .update(analysisJobs)
+    .set({
+      lockedAt: new Date(),
+      updatedAt: new Date(),
+    })
+    .where(and(eq(analysisJobs.reportId, reportId), eq(analysisJobs.lockedBy, lockedBy)))
+}
+
+export async function completeAnalysisJob(reportId: string): Promise<void> {
+  await db
+    .update(analysisJobs)
+    .set({
+      status: "completed",
+      lockedAt: null,
+      lockedBy: null,
+      completedAt: new Date(),
+      lastError: null,
+      updatedAt: new Date(),
+    })
+    .where(eq(analysisJobs.reportId, reportId))
+}
+
+export async function failAnalysisJob(reportId: string, message: string): Promise<void> {
+  await db
+    .update(analysisJobs)
+    .set({
+      status: "failed",
+      lockedAt: null,
+      lockedBy: null,
+      completedAt: new Date(),
+      lastError: message,
+      updatedAt: new Date(),
+    })
+    .where(eq(analysisJobs.reportId, reportId))
+}
+
+export async function getReportById(reportId: string): Promise<MarketingReport | undefined> {
+  return getStoredReport(reportId)
 }

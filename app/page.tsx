@@ -1,11 +1,15 @@
-import type { Metadata } from "next";
-import type { JSX } from "react";
-import Link from "next/link";
+import type { Metadata } from "next"
+import type { JSX } from "react"
+import Link from "next/link"
 
-import { UrlIntakeForm } from "@/components/url-intake-form";
-import { isExaConfigured } from "@/lib/research/exa";
-import { listReports } from "@/lib/store/report-store";
-import { isModelConfigured } from "@/lib/utils/model";
+import { UrlIntakeForm } from "@/components/url-intake-form"
+import { WorkspaceSwitcher } from "@/components/workspace-switcher"
+import { getActiveOrganizationId, getSession } from "@/lib/auth/session"
+import { isExaConfigured } from "@/lib/research/exa"
+import { listReports } from "@/lib/store/report-store"
+import { isModelConfigured } from "@/lib/utils/model"
+
+export const dynamic = "force-dynamic"
 
 const featureRows = [
   {
@@ -24,12 +28,12 @@ const featureRows = [
     label: "Community Research",
     detail: "Runs fast Exa-backed research across public discussion surfaces, then falls back to direct Reddit and Hacker News lookups.",
   },
-];
+]
 
 export const metadata: Metadata = {
   title: "Signal CMO | AI Growth Console",
   description: "Run a persistent AI CMO audit across SEO, AI visibility, community demand, and content strategy.",
-};
+}
 
 function formatRunDate(value: string): string {
   return new Intl.DateTimeFormat("en", {
@@ -37,13 +41,15 @@ function formatRunDate(value: string): string {
     day: "numeric",
     hour: "numeric",
     minute: "2-digit",
-  }).format(new Date(value));
+  }).format(new Date(value))
 }
 
-export default function HomePage(): JSX.Element {
-  const recentRuns = listReports(5);
-  const modelReady = isModelConfigured();
-  const researchReady = isExaConfigured();
+export default async function HomePage(): Promise<JSX.Element> {
+  const session = await getSession()
+  const activeOrganizationId = session ? getActiveOrganizationId(session) : null
+  const recentRuns = activeOrganizationId ? await listReports(activeOrganizationId, 5) : []
+  const modelReady = isModelConfigured()
+  const researchReady = isExaConfigured()
 
   return (
     <main className="page-shell">
@@ -52,14 +58,35 @@ export default function HomePage(): JSX.Element {
         <div className="hero-grid">
           <div className="hero-copy">
             <h1>
-              A founder-facing AI CMO that audits the site, writes the brief, and leaves a report you can reuse.
+              {session
+                ? "Run audits inside a shared workspace with durable report history."
+                : "A founder-facing AI CMO with real accounts, workspaces, and persistent reports."}
             </h1>
             <p className="hero-text">
-              Drop in a company URL and the app runs a disk-backed analysis pipeline for SEO,
-              AI-search visibility, community demand, and strategy. The output stays available as a
-              working report instead of disappearing on refresh.
+              {session
+                ? "Every run now lands in a Better Auth workspace backed by Neon Postgres, so your SEO, GEO, community, and strategy reports survive refreshes, Railway deploys, and team handoffs."
+                : "Sign in to launch the AI CMO inside a team workspace. The stack now uses Better Auth, organizations, and Neon-backed persistence instead of local JSON files."}
             </p>
-            <UrlIntakeForm />
+
+            {session ? (
+              activeOrganizationId ? (
+                <UrlIntakeForm />
+              ) : (
+                <p className="intake-hint">
+                  Create or select a workspace first, then the URL intake will unlock automatically.
+                </p>
+              )
+            ) : (
+              <div className="hero-action-row">
+                <Link className="back-link" href="/sign-up">
+                  Create account
+                </Link>
+                <Link className="hero-secondary-link" href="/sign-in">
+                  Sign in
+                </Link>
+              </div>
+            )}
+
             <div className="hero-status-strip">
               <div className="hero-status-item">
                 <span>Model</span>
@@ -71,37 +98,40 @@ export default function HomePage(): JSX.Element {
               </div>
               <div className="hero-status-item">
                 <span>Storage</span>
-                <strong>Disk-backed report history</strong>
+                <strong>{session ? "Neon workspace persistence" : "Sign in to unlock persistence"}</strong>
               </div>
             </div>
           </div>
 
           <div className="hero-aside">
-            <div className="hero-card hero-card-strong">
-              <span className="hero-card-label">Command Surface</span>
-              <h2>One run, four agents, persistent output.</h2>
-              <p>
-                The crawler extracts the homepage, the backend stores each report on disk, and the
-                strategy layer upgrades from heuristics to structured AI output when your model
-                credentials are set.
-              </p>
-              <div className="metric-cluster metric-cluster-single">
-                <div className="metric-card">
-                  <span>04</span>
-                  <p>Specialized agents coordinated in one backend run.</p>
-                </div>
-                <div className="metric-card">
-                  <span>{modelReady ? "ON" : "OFF"}</span>
-                  <p>AI strategy enrichment with deterministic fallback behavior.</p>
+            {session ? (
+              <WorkspaceSwitcher userEmail={session.user.email} userName={session.user.name} />
+            ) : (
+              <div className="hero-card hero-card-strong">
+                <span className="hero-card-label">Command Surface</span>
+                <h2>One run, four agents, shared workspace memory.</h2>
+                <p>
+                  The crawler extracts the homepage, Better Auth manages accounts and organizations,
+                  and Neon stores the report so your team can reopen it later on Railway.
+                </p>
+                <div className="metric-cluster metric-cluster-single">
+                  <div className="metric-card">
+                    <span>04</span>
+                    <p>Specialized agents coordinated in one backend run.</p>
+                  </div>
+                  <div className="metric-card">
+                    <span>DB</span>
+                    <p>Workspace-scoped report history with authenticated access control.</p>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             <div className="hero-card recent-runs-panel">
               <div className="panel-head compact-head">
                 <h2>Recent Runs</h2>
                 <span className={`status-badge ${modelReady ? "status-completed" : "status-queued"}`}>
-                  {modelReady ? "AI ready" : "Rules only"}
+                  {session ? "Workspace feed" : "Sign-in required"}
                 </span>
               </div>
               {recentRuns.length > 0 ? (
@@ -121,7 +151,11 @@ export default function HomePage(): JSX.Element {
                 </div>
               ) : (
                 <p className="empty-state">
-                  Your completed audits will show up here once the first run finishes.
+                  {session
+                    ? activeOrganizationId
+                      ? "This workspace has no completed audits yet."
+                      : "Select a workspace to see recent runs."
+                    : "Sign in to see workspace reports and persistent run history."}
                 </p>
               )}
             </div>
@@ -148,30 +182,28 @@ export default function HomePage(): JSX.Element {
 
           <div className="ops-rail">
             <article className="feature-row">
-              <h3>Persistent reports</h3>
-              <p>Runs are written to disk so the terminal view still resolves after refreshes and restarts.</p>
+              <h3>Workspace persistence</h3>
+              <p>Reports now live in Neon Postgres and stay scoped to the active Better Auth organization.</p>
             </article>
             <article className="feature-row">
-              <h3>Safe reruns</h3>
-              <p>The report endpoint can resume queued or interrupted jobs without duplicating active work.</p>
+              <h3>Safer reruns</h3>
+              <p>Database-backed job claims prevent duplicate runs when Railway restarts or multiple requests race.</p>
             </article>
             <article className="feature-row">
               <h3>Structured AI strategy</h3>
               <p>
-                OpenRouter can now return positioning, hooks, and an operator brief as typed JSON,
-                with deterministic fallbacks when the model is unavailable.
+                OpenRouter returns positioning, hooks, and an operator brief as typed JSON with deterministic fallbacks.
               </p>
             </article>
             <article className="feature-row">
-              <h3>Fast research layer</h3>
+              <h3>Railway-ready auth stack</h3>
               <p>
-                Exa-backed search now feeds the research agent with fresher public discussion hits
-                before falling back to direct source lookups.
+                Better Auth now supports Google OAuth, email/password, and shared workspaces without Redis.
               </p>
             </article>
           </div>
         </div>
       </section>
     </main>
-  );
+  )
 }

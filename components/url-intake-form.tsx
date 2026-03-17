@@ -66,11 +66,11 @@ export function UrlIntakeForm(): JSX.Element {
       </div>
       <div className="intake-meta">
         <span>Public homepage URL</span>
-        <span>Report history persists locally</span>
+        <span>Saved to the active workspace</span>
       </div>
       <p className="intake-hint">
-        Real homepage crawl, production-style scoring, and a report with SEO, GEO, community, and
-        content recommendations.
+        Real homepage crawl, production-style scoring, and a Neon-backed report with SEO, GEO,
+        community, and content recommendations.
       </p>
       {error ? (
         <p aria-live="polite" className="intake-error">
