@@ -3,13 +3,6 @@ import Exa from "exa-js";
 import type { CommunityChannel, CommunityOpportunity } from "@/lib/types/report";
 import { cleanWhitespace } from "@/lib/utils/text";
 
-const COMMUNITY_DOMAINS = [
-  "reddit.com",
-  "news.ycombinator.com",
-  "github.com",
-  "indiehackers.com",
-];
-
 function getExaClient(): Exa | null {
   const apiKey = process.env.EXA_API_KEY?.trim();
 
@@ -125,7 +118,6 @@ export async function searchFastCommunityResearch(
   const results = await Promise.allSettled(
     queries.map((query) =>
       exa.searchAndContents(buildPrompt(query), {
-        includeDomains: COMMUNITY_DOMAINS,
         numResults: 3,
         text: { maxCharacters: 700 },
         useAutoprompt: true,
