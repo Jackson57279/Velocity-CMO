@@ -2,14 +2,14 @@ import type { Metadata } from "next"
 import type { JSX } from "react"
 import { notFound } from "next/navigation"
 
-import { ReportClient } from "@/components/report-client"
+import { AgentDashboard } from "@/components/agent-dashboard"
 import { requireActiveOrganization } from "@/lib/auth/session"
 import { getReport } from "@/lib/store/report-store"
 
 export const dynamic = "force-dynamic"
 export const metadata: Metadata = {
-  title: "Velocity CMO | Report",
-  description: "Review the AI CMO report, agent logs, scorecards, and roadmap.",
+  title: "Velocity CMO | Dashboard",
+  description: "AI CMO dashboard with real-time agent status, scores, and insights.",
 }
 
 export default async function ReportPage({
@@ -27,5 +27,5 @@ export default async function ReportPage({
     notFound()
   }
 
-  return <ReportClient initialReport={report} reportId={reportId} />
+  return <AgentDashboard initialReport={report} reportId={reportId} />
 }
