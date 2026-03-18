@@ -2,6 +2,7 @@ import { z } from "zod"
 
 import { startMarketingAnalysis } from "@/lib/agents/orchestrator"
 import { auth } from "@/lib/auth"
+import { getOrganizationBillingSummary } from "@/lib/billing/store"
 import { createReport } from "@/lib/store/report-store"
 import { hostnameFromUrl, normalizeSubmittedUrl } from "@/lib/utils/url"
 
@@ -10,6 +11,13 @@ export const runtime = "nodejs"
 const requestSchema = z.object({
   url: z.string().min(3),
 })
+
+function formatCycleResetDate(value: string): string {
+  return new Intl.DateTimeFormat("en", {
+    month: "short",
+    day: "numeric",
+  }).format(new Date(value))
+}
 
 export async function POST(request: Request): Promise<Response> {
   const session = await auth.api.getSession({
@@ -24,6 +32,19 @@ export async function POST(request: Request): Promise<Response> {
 
   if (!activeOrganizationId) {
     return Response.json({ error: "Create or select a workspace before starting an analysis." }, { status: 400 })
+  }
+
+  const billingSummary = await getOrganizationBillingSummary(activeOrganizationId)
+
+  if (billingSummary.creditsRemaining <= 0) {
+    return Response.json(
+      {
+        error: `${billingSummary.planLabel} has no credits left right now. Credits reset on ${formatCycleResetDate(billingSummary.currentPeriodEnd)}.`,
+        planKey: billingSummary.planKey,
+        creditsRemaining: billingSummary.creditsRemaining,
+      },
+      { status: 402 },
+    )
   }
 
   const parsed = requestSchema.safeParse(await request.json().catch(() => null))

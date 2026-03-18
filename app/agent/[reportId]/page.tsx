@@ -8,7 +8,7 @@ import { getReport } from "@/lib/store/report-store"
 
 export const dynamic = "force-dynamic"
 export const metadata: Metadata = {
-  title: "Signal CMO | Report",
+  title: "Velocity CMO | Report",
   description: "Review the AI CMO report, agent logs, scorecards, and roadmap.",
 }
 

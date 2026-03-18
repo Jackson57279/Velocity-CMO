@@ -6,8 +6,8 @@ import { AuthForm } from "@/components/auth-form"
 import { getSession, isGoogleAuthConfigured } from "@/lib/auth/session"
 
 export const metadata: Metadata = {
-  title: "Signal CMO | Sign Up",
-  description: "Create a Signal CMO account with a shared workspace and persistent reports.",
+  title: "Velocity CMO | Sign Up",
+  description: "Create a Velocity CMO account with a shared workspace and persistent reports.",
 }
 
 export default async function SignUpPage(): Promise<JSX.Element> {

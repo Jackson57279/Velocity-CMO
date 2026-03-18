@@ -2,6 +2,14 @@ import { randomUUID } from "node:crypto"
 
 import { z } from "zod"
 
+import { getBillingUsageEventName } from "@/lib/billing/store"
+import {
+  markBillingUsageEventFailed,
+  markBillingUsageEventIngested,
+  markBillingUsageEventSkipped,
+  recordCompletedReportCreditUsage,
+} from "@/lib/billing/store"
+import { getPolarClient } from "@/lib/billing/polar"
 import { runCommunityResearchAgent } from "@/lib/agents/communityResearchAgent"
 import { runContentStrategyAgent } from "@/lib/agents/contentStrategyAgent"
 import { runGeoVisibilityAgent } from "@/lib/agents/geoVisibilityAgent"
@@ -13,6 +21,7 @@ import {
   completeAnalysisJob,
   failAnalysisJob,
   getReportById,
+  getReportBillingContext,
   setAgentStatus,
   setJobStatus,
   touchAnalysisJob,
@@ -176,6 +185,56 @@ function buildLockId(reportId: string): string {
   return `${workerId}:${reportId}:${randomUUID()}`
 }
 
+async function syncCompletedReportUsage(reportId: string): Promise<void> {
+  const reportContext = await getReportBillingContext(reportId)
+
+  if (!reportContext) {
+    return
+  }
+
+  const usageResult = await recordCompletedReportCreditUsage({
+    organizationId: reportContext.organizationId,
+    reportId,
+  })
+
+  if (usageResult.status !== "consumed") {
+    return
+  }
+
+  const polarClient = getPolarClient()
+
+  if (!usageResult.summary.hasPaidPlan) {
+    await markBillingUsageEventSkipped(reportId, "Free-tier credits are enforced locally.")
+    return
+  }
+
+  if (!polarClient) {
+    await markBillingUsageEventSkipped(reportId, "Polar is not configured for event ingestion.")
+    return
+  }
+
+  try {
+    await polarClient.events.ingest({
+      events: [
+        {
+          name: getBillingUsageEventName(),
+          externalId: reportId,
+          externalCustomerId: reportContext.createdByUserId,
+          metadata: {
+            credits: 1,
+            organizationId: reportContext.organizationId,
+            reportId,
+          },
+        },
+      ],
+    })
+    await markBillingUsageEventIngested(reportId)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Usage event ingestion failed."
+    await markBillingUsageEventFailed(reportId, message)
+  }
+}
+
 async function beginMarketingAnalysis(reportId: string): Promise<void> {
   const report = await getReportById(reportId)
 
@@ -314,6 +373,7 @@ async function runMarketingAnalysis(reportId: string, lockedBy: string): Promise
       draft.brief = executiveArtifacts.brief
       draft.scores = [...draft.scores].sort((left, right) => right.score - left.score)
     })
+    await syncCompletedReportUsage(reportId)
     await appendLog(reportId, "contentStrategyAgent", "success", "Analysis complete. Final report assembled.")
     await setJobStatus(reportId, "completed")
     await completeAnalysisJob(reportId)

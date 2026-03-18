@@ -8,6 +8,13 @@
       "when": 1773739537242,
       "tag": "0000_skinny_mad_thinker",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1773802380967,
+      "tag": "0001_misty_whistler",
+      "breakpoints": true
     }
   ]
 }

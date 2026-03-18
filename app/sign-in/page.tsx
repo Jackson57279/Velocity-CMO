@@ -7,8 +7,8 @@ import { isGoogleAuthConfigured } from "@/lib/auth/session"
 import { getSession } from "@/lib/auth/session"
 
 export const metadata: Metadata = {
-  title: "Signal CMO | Sign In",
-  description: "Access your Signal CMO workspace and persistent growth reports.",
+  title: "Velocity CMO | Sign In",
+  description: "Access your Velocity CMO workspace and persistent growth reports.",
 }
 
 export default async function SignInPage(): Promise<JSX.Element> {

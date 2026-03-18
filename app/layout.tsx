@@ -15,14 +15,14 @@ const monoFont = Azeret_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Signal CMO",
+  title: "Velocity CMO",
   description: "Autonomous growth analysis for landing pages and startup websites.",
-};
+}
 
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: React.ReactNode
 }>) {
   return (
     <html lang="en">
@@ -43,5 +43,5 @@ export default function RootLayout({
       </head>
       <body className={`${displayFont.variable} ${monoFont.variable}`}>{children}</body>
     </html>
-  );
+  )
 }

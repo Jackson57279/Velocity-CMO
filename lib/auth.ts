@@ -1,7 +1,17 @@
 import { betterAuth } from "better-auth"
 import { drizzleAdapter } from "better-auth/adapters/drizzle"
 import { organization } from "better-auth/plugins/organization"
+import { checkout, polar, portal, usage, webhooks } from "@polar-sh/better-auth"
 
+import { getPolarCheckoutProducts } from "@/lib/billing/config"
+import { getPolarClient } from "@/lib/billing/polar"
+import {
+  handlePolarOrderPaid,
+  handlePolarSubscriptionActive,
+  handlePolarSubscriptionCanceled,
+  handlePolarSubscriptionRevoked,
+  handlePolarSubscriptionUpdated,
+} from "@/lib/billing/polar-webhooks"
 import { db } from "@/lib/db"
 import {
   account,
@@ -34,9 +44,45 @@ const authSecret =
 
 const googleClientId = process.env.GOOGLE_CLIENT_ID
 const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET
+const polarClient = getPolarClient()
+const polarProducts = getPolarCheckoutProducts()
+const polarPlugins = polarClient
+  ? [
+      polar({
+        client: polarClient,
+        createCustomerOnSignUp: true,
+        use: [
+          checkout({
+            products: polarProducts.length > 0 ? polarProducts : undefined,
+            successUrl: "/?checkout_id={CHECKOUT_ID}",
+            returnUrl: baseURL,
+            authenticatedUsersOnly: true,
+            theme: "dark",
+          }),
+          portal({
+            returnUrl: baseURL,
+            theme: "dark",
+          }),
+          usage(),
+          ...(process.env.POLAR_WEBHOOK_SECRET
+            ? [
+                webhooks({
+                  secret: process.env.POLAR_WEBHOOK_SECRET,
+                  onOrderPaid: handlePolarOrderPaid,
+                  onSubscriptionActive: handlePolarSubscriptionActive,
+                  onSubscriptionUpdated: handlePolarSubscriptionUpdated,
+                  onSubscriptionCanceled: handlePolarSubscriptionCanceled,
+                  onSubscriptionRevoked: handlePolarSubscriptionRevoked,
+                }),
+              ]
+            : []),
+        ],
+      }),
+    ]
+  : []
 
 export const auth = betterAuth({
-  appName: "Signal CMO",
+  appName: "Velocity CMO",
   baseURL,
   trustedOrigins,
   secret: authSecret,
@@ -64,7 +110,7 @@ export const auth = betterAuth({
           },
         }
       : {},
-  plugins: [organization()],
+  plugins: [organization(), ...polarPlugins],
 })
 
 export type AuthSession = typeof auth.$Infer.Session

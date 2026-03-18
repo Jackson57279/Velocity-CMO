@@ -76,7 +76,7 @@ export function AuthForm({ mode, googleEnabled }: AuthFormProps): JSX.Element {
   return (
     <div className="auth-card-shell">
       <div className="eyebrow">Workspace Access</div>
-      <h1>{isSignUp ? "Create your Signal CMO workspace." : "Sign in to your Signal CMO workspace."}</h1>
+      <h1>{isSignUp ? "Create your Velocity CMO workspace." : "Sign in to your Velocity CMO workspace."}</h1>
       <p className="auth-copy">
         Use Better Auth with Neon-backed persistence so reports, workspaces, and access stay durable
         across Railway deploys.

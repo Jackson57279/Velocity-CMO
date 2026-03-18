@@ -1,6 +1,6 @@
 # AI CMO App — Agent Guidelines
 
-Agentic coding guide for the Signal CMO repository. This is a Next.js 16+ application with React 19 and TypeScript 5.9.
+Agentic coding guide for the Velocity CMO repository. This is a Next.js 16+ application with React 19 and TypeScript 5.9.
 
 ## Build & Development Commands
 
@@ -193,15 +193,22 @@ bun jest src/utils/url.test.ts
 - Never hardcode API keys or external endpoints; always read them from `.env` files
 - Use OpenRouter as the default AI provider, configured via `OPENROUTER_*` environment variables
 - Use Exa (`exa.ai`) as the preferred fast research backend when adding external research capabilities
+- Allow Exa-backed research to search across any domain instead of restricting it to a fixed domain allowlist
+- Use Better Auth as the default authentication solution for this project
+- Avoid Redis; keep sessions, job coordination, and related state in Postgres or framework-native storage
 - Aim for premium, distinctive UI/UX; leverage design-taste/frontend skills and avoid generic AI-looking interfaces
 
 ## Learned Workspace Facts
 
-- This repository implements an AI CMO / marketing console called Signal CMO using Next.js App Router, React, TypeScript, and Bun
-- Marketing reports are persisted as JSON under the `.data/reports` directory and surfaced through API routes
+- This repository implements an AI CMO / marketing console called Velocity CMO using Next.js App Router, React, TypeScript, and Bun
+- Authentication is handled with Better Auth, including organizations/workspaces plus Google OAuth and email/password flows
+- Marketing reports and analysis job coordination are persisted in Neon Postgres via Drizzle and scoped to the active Better Auth organization
 - AI model integration is centralized in `lib/utils/model.ts` and uses OpenRouter via `OPENROUTER_API_KEY`, `OPENROUTER_MODEL`, and `OPENROUTER_BASE_URL`
-- Exa fast research is integrated through a reusable wrapper and powers the community/research agent, with `EXA_API_KEY` configured via environment variables
+- Exa fast research is integrated through a reusable wrapper, powers the community/research agent, and is allowed to search across any domain with `EXA_API_KEY`
 - The analysis pipeline coordinates multiple agents (SEO, GEO/AI visibility, community research, content strategy) through an agent orchestrator
+- Billing uses Polar, with checkout/portal/webhook integration plus a workspace-scoped local credit ledger for enforcement
+- Free workspaces get 3 credits per billing period, Pro gets 10 credits per month, and each completed audit consumes 1 credit
 - Standard quality checks and builds are expected to run with Bun scripts: `bun run lint`, `bun run typecheck`, and `bun run build`
-- The `.data` directory (including reports) is git-ignored and should not be tracked in version control
+- Railway deployment is configured with `railway.json` and `nixpacks.toml` for Bun + Next production packaging
+- The `.data` directory is legacy and should not be used as the source of truth for reports
 - The homepage and report dashboard have been restyled into a darker, terminal-like multi-panel console inspired by Okara’s AI CMO terminal

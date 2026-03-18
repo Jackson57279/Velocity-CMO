@@ -299,3 +299,19 @@ export async function failAnalysisJob(reportId: string, message: string): Promis
 export async function getReportById(reportId: string): Promise<MarketingReport | undefined> {
   return getStoredReport(reportId)
 }
+
+export async function getReportBillingContext(reportId: string): Promise<{
+  organizationId: string
+  createdByUserId: string
+} | null> {
+  const [record] = await db
+    .select({
+      organizationId: reports.organizationId,
+      createdByUserId: reports.createdByUserId,
+    })
+    .from(reports)
+    .where(eq(reports.id, reportId))
+    .limit(1)
+
+  return record ?? null
+}

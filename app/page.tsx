@@ -2,7 +2,11 @@ import type { Metadata } from "next"
 import type { JSX } from "react"
 import Link from "next/link"
 
+import { BillingPanel } from "@/components/billing-panel"
 import { UrlIntakeForm } from "@/components/url-intake-form"
+import { getPolarCheckoutProducts } from "@/lib/billing/config"
+import { getPolarClient } from "@/lib/billing/polar"
+import { getOrganizationBillingSummary } from "@/lib/billing/store"
 import { WorkspaceSwitcher } from "@/components/workspace-switcher"
 import { getActiveOrganizationId, getSession } from "@/lib/auth/session"
 import { isExaConfigured } from "@/lib/research/exa"
@@ -31,7 +35,7 @@ const featureRows = [
 ]
 
 export const metadata: Metadata = {
-  title: "Signal CMO | AI Growth Console",
+  title: "Velocity CMO | AI Growth Console",
   description: "Run a persistent AI CMO audit across SEO, AI visibility, community demand, and content strategy.",
 }
 
@@ -48,6 +52,11 @@ export default async function HomePage(): Promise<JSX.Element> {
   const session = await getSession()
   const activeOrganizationId = session ? getActiveOrganizationId(session) : null
   const recentRuns = activeOrganizationId ? await listReports(activeOrganizationId, 5) : []
+  const billingSummary = activeOrganizationId
+    ? await getOrganizationBillingSummary(activeOrganizationId)
+    : null
+  const polarEnabled = Boolean(getPolarClient())
+  const checkoutSlugs = new Set(getPolarCheckoutProducts().map((product) => product.slug))
   const modelReady = isModelConfigured()
   const researchReady = isExaConfigured()
 
@@ -126,6 +135,16 @@ export default async function HomePage(): Promise<JSX.Element> {
                 </div>
               </div>
             )}
+
+            {session && activeOrganizationId && billingSummary ? (
+              <BillingPanel
+                activeOrganizationId={activeOrganizationId}
+                canUpgradeToPro={checkoutSlugs.has("pro")}
+                canUpgradeToTeam={checkoutSlugs.has("team")}
+                polarEnabled={polarEnabled}
+                summary={billingSummary}
+              />
+            ) : null}
 
             <div className="hero-card recent-runs-panel">
               <div className="panel-head compact-head">
