@@ -2737,3 +2737,398 @@ a {
     width: 100%;
   }
 }
+
+/* ==========================================================================
+   VERCEL-STYLE SIDEBAR DASHBOARD
+   ========================================================================== */
+
+.vercel-layout {
+  display: flex;
+  min-height: 100dvh;
+  background: #000;
+  color: #ededed;
+  font-family: var(--font-mono), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
+}
+
+.vercel-sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  border-right: 1px solid #333;
+  background: #000;
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.vercel-sidebar-header {
+  padding: 24px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.vercel-sidebar-logo {
+  width: 24px;
+  height: 24px;
+  background: #fff;
+  color: #000;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.vercel-sidebar-title {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.vercel-sidebar-search {
+  margin: 0 16px 16px;
+  padding: 8px 12px;
+  background: #111;
+  border: 1px solid #333;
+  border-radius: 6px;
+  color: #888;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vercel-sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 12px;
+}
+
+.vercel-nav-item {
+  padding: 8px 12px;
+  border-radius: 6px;
+  color: #888;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.2s;
+}
+
+.vercel-nav-item:hover, .vercel-nav-item.active {
+  background: #111;
+  color: #fff;
+}
+
+.vercel-sidebar-footer {
+  margin-top: auto;
+  padding: 16px;
+  border-top: 1px solid #333;
+}
+
+.vercel-user-profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px;
+  border-radius: 6px;
+}
+
+.vercel-user-profile:hover {
+  background: #111;
+}
+
+.vercel-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #333;
+}
+
+.vercel-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.vercel-topbar {
+  height: 64px;
+  border-bottom: 1px solid #333;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  position: sticky;
+  top: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(12px);
+  z-index: 10;
+}
+
+.vercel-breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #888;
+}
+
+.vercel-breadcrumbs strong {
+  color: #fff;
+  font-weight: 500;
+}
+
+.vercel-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.vercel-button {
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.vercel-button-primary {
+  background: #fff;
+  color: #000;
+  border: 1px solid #fff;
+}
+
+.vercel-button-primary:hover {
+  background: #ccc;
+}
+
+.vercel-button-secondary {
+  background: #000;
+  color: #fff;
+  border: 1px solid #333;
+}
+
+.vercel-button-secondary:hover {
+  background: #111;
+}
+
+.vercel-content {
+  padding: 32px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 32px;
+}
+
+.vercel-left-col {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.vercel-right-col {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.vercel-section-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: #fff;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.vercel-card {
+  border: 1px solid #333;
+  border-radius: 8px;
+  background: #0a0a0a;
+  overflow: hidden;
+}
+
+.vercel-usage-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.vercel-usage-item {
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #333;
+  font-size: 13px;
+}
+
+.vercel-usage-item:last-child {
+  border-bottom: none;
+}
+
+.vercel-usage-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #888;
+}
+
+.vercel-usage-value {
+  color: #fff;
+}
+
+.vercel-projects-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 16px;
+}
+
+.vercel-project-card {
+  border: 1px solid #333;
+  border-radius: 8px;
+  background: #0a0a0a;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transition: border-color 0.2s;
+  text-decoration: none;
+  color: inherit;
+}
+
+.vercel-project-card:hover {
+  border-color: #666;
+}
+
+.vercel-project-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.vercel-project-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.vercel-project-icon {
+  width: 32px;
+  height: 32px;
+  background: #222;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+}
+
+.vercel-project-name {
+  font-weight: 600;
+  font-size: 15px;
+  color: #fff;
+}
+
+.vercel-project-url {
+  font-size: 13px;
+  color: #888;
+  margin-top: 2px;
+}
+
+.vercel-project-score {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid #10b981;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: #10b981;
+}
+
+.vercel-project-score.warning {
+  border-color: #f59e0b;
+  color: #f59e0b;
+}
+
+.vercel-project-score.danger {
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+.vercel-project-score.queued {
+  border-color: #888;
+  color: #888;
+}
+
+.vercel-project-meta {
+  font-size: 13px;
+  color: #888;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.vercel-project-branch {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.vercel-project-commit {
+  color: #fff;
+}
+
+.vercel-project-time {
+  color: #666;
+}
+
+.vercel-search-bar {
+  background: #000;
+  border: 1px solid #333;
+  border-radius: 6px;
+  padding: 8px 12px;
+  color: #fff;
+  width: 240px;
+  font-size: 13px;
+}
+
+.vercel-intake-form {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.vercel-intake-input {
+  flex: 1;
+  background: #000;
+  border: 1px solid #333;
+  border-radius: 6px;
+  padding: 10px 16px;
+  color: #fff;
+  font-size: 14px;
+}
+
+.vercel-intake-input:focus {
+  border-color: #fff;
+  outline: none;
+}
+
+@media (max-width: 1024px) {
+  .vercel-content {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .vercel-sidebar {
+    display: none;
+  }
+}

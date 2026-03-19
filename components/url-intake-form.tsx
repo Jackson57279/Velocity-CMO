@@ -43,40 +43,56 @@ export function UrlIntakeForm(): JSX.Element {
   }
 
   return (
-    <form className="intake-form" onSubmit={handleSubmit}>
-      <label className="intake-label" htmlFor="url">
-        Company URL
-      </label>
-      <div className="intake-row">
+    <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <h3 style={{ margin: 0, fontSize: "16px", fontWeight: "500" }}>New Audit</h3>
+        <span style={{ fontSize: "12px", color: "#888" }}>Runs in active workspace</span>
+      </div>
+      
+      <div style={{ display: "flex", gap: "12px" }}>
         <input
           aria-invalid={Boolean(error)}
           id="url"
           autoComplete="url"
-          className="intake-input"
           name="url"
           onChange={(event) => setUrl(event.target.value)}
           placeholder="https://your-company.com"
           required
           type="url"
           value={url}
+          style={{
+            flex: 1,
+            background: "#000",
+            border: "1px solid #333",
+            borderRadius: "6px",
+            padding: "10px 16px",
+            color: "#fff",
+            fontSize: "14px",
+            outline: "none",
+            transition: "border-color 0.2s"
+          }}
+          onFocus={(e) => e.target.style.borderColor = "#fff"}
+          onBlur={(e) => e.target.style.borderColor = "#333"}
         />
-        <button className="intake-button" disabled={!canSubmit} type="submit">
-          {isSubmitting ? "Launching agents..." : "Run AI CMO audit"}
+        <button 
+          disabled={!canSubmit} 
+          type="submit"
+          className="vercel-button vercel-button-primary"
+          style={{ opacity: canSubmit ? 1 : 0.5, cursor: canSubmit ? "pointer" : "not-allowed" }}
+        >
+          {isSubmitting ? "Launching..." : "Run Audit"}
         </button>
       </div>
-      <div className="intake-meta">
-        <span>Public homepage URL</span>
-        <span>Saved to the active workspace</span>
-      </div>
-      <p className="intake-hint">
-        Real homepage crawl, production-style scoring, and a Neon-backed report with SEO, GEO,
-        community, and content recommendations.
-      </p>
+      
       {error ? (
-        <p aria-live="polite" className="intake-error">
+        <p aria-live="polite" style={{ margin: 0, color: "#ef4444", fontSize: "13px" }}>
           {error}
         </p>
-      ) : null}
+      ) : (
+        <p style={{ margin: 0, color: "#888", fontSize: "13px" }}>
+          Crawls homepage, scores SEO/GEO, and generates content strategy.
+        </p>
+      )}
     </form>
   );
 }
